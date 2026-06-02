@@ -1,0 +1,742 @@
+cat > /tmp/build_v5.py << 'PYEOF'
+html = r"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>Happy Birthday Sarvika 🌸</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Nunito:wght@300;400;600;700;800&family=Dancing+Script:wght@600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{--pk:#ff6b9d;--lv:#a855f7;--bl:#3b82f6;--cy:#06b6d4;--gd:#fbbf24;--bg:#020008;--glass:rgba(255,255,255,.05);--glass2:rgba(255,255,255,.1);--border:rgba(255,255,255,.12)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:white;font-family:'Nunito',sans-serif;overflow-x:hidden;cursor:none;min-height:100vh}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:#0a0015}::-webkit-scrollbar-thumb{background:linear-gradient(var(--pk),var(--lv));border-radius:4px}
+
+/* CURSOR */
+.cursor{width:14px;height:14px;background:radial-gradient(var(--pk),var(--lv));border-radius:50%;position:fixed;pointer-events:none;z-index:99999;transform:translate(-50%,-50%);transition:width .2s,height .2s;mix-blend-mode:screen;filter:blur(1px)}
+.cur-ring{width:36px;height:36px;border:1px solid rgba(255,107,157,.5);border-radius:50%;position:fixed;pointer-events:none;z-index:99998;transform:translate(-50%,-50%);transition:all .1s ease}
+.cur-trail{position:fixed;pointer-events:none;z-index:99990;border-radius:50%;mix-blend-mode:screen;transform:translate(-50%,-50%)}
+
+/* CANVAS LAYERS */
+#bgCanvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+#fxCanvas{position:fixed;inset:0;z-index:200;pointer-events:none}
+
+/* LOADING */
+#loader{position:fixed;inset:0;background:#000;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 1s ease}
+#loader.out{opacity:0;pointer-events:none}
+.ld-title{font-family:'Orbitron',sans-serif;font-size:clamp(14px,3vw,20px);letter-spacing:4px;color:var(--cy);margin-bottom:10px;text-shadow:0 0 20px var(--cy)}
+.ld-status{font-family:'Share Tech Mono',monospace;font-size:12px;color:rgba(255,255,255,.5);letter-spacing:2px;margin-bottom:32px;min-height:18px}
+.ld-bar-wrap{width:min(320px,80vw);height:3px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden;margin-bottom:16px}
+.ld-bar{height:100%;width:0;background:linear-gradient(90deg,var(--bl),var(--lv),var(--pk));border-radius:3px;transition:width .1s ease;box-shadow:0 0 10px var(--lv)}
+.ld-pct{font-family:'Orbitron',sans-serif;font-size:12px;color:var(--lv);letter-spacing:2px}
+
+/* HERO */
+#hero{position:relative;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:80px 20px;overflow:hidden;z-index:10}
+.h-date{font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:5px;color:var(--cy);margin-bottom:20px;text-transform:uppercase;opacity:0;animation:fadeUp .8s ease .5s forwards;text-shadow:0 0 10px var(--cy)}
+.h-greeting{font-family:'Orbitron',sans-serif;font-size:clamp(12px,3vw,16px);letter-spacing:6px;color:rgba(255,255,255,.5);margin-bottom:8px;opacity:0;animation:fadeUp .8s ease .7s forwards}
+.h-hb{font-family:'Orbitron',sans-serif;font-size:clamp(32px,8vw,64px);font-weight:900;background:linear-gradient(135deg,var(--pk),var(--lv),var(--bl));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;opacity:0;animation:fadeUp .8s ease .9s forwards;text-shadow:none;filter:drop-shadow(0 0 30px rgba(168,85,247,.4));margin-bottom:10px}
+.h-name{font-family:'Dancing Script',cursive;font-size:clamp(56px,14vw,110px);font-weight:700;background:linear-gradient(135deg,#fff,var(--pk),var(--lv));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;margin-bottom:24px;min-height:1.2em}
+.h-cursor{display:inline-block;width:3px;height:.85em;background:var(--pk);vertical-align:middle;animation:blink .7s steps(1) infinite;margin-left:4px}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.h-sub{font-size:14px;color:rgba(255,255,255,.4);letter-spacing:2px;margin-bottom:40px;opacity:0;animation:fadeUp .8s ease 1.6s forwards}
+.h-scroll{display:flex;flex-direction:column;align-items:center;gap:8px;color:rgba(255,255,255,.25);font-size:10px;letter-spacing:3px;text-transform:uppercase;opacity:0;animation:fadeUp .8s ease 2s forwards}
+.h-arr{width:16px;height:16px;border-right:1.5px solid rgba(255,255,255,.25);border-bottom:1.5px solid rgba(255,255,255,.25);transform:rotate(45deg);animation:arrBounce 1.5s ease-in-out infinite}
+@keyframes arrBounce{0%,100%{transform:rotate(45deg)}50%{transform:rotate(45deg) translate(4px,4px)}}
+
+/* GLASS CARD */
+.glass-card{background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:24px;padding:32px;position:relative;overflow:hidden}
+.glass-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.05),transparent);pointer-events:none}
+
+/* SECTIONS */
+.section{padding:80px 20px;position:relative;z-index:10;max-width:900px;margin:0 auto}
+.sec-title{font-family:'Orbitron',sans-serif;font-size:clamp(18px,4vw,26px);font-weight:700;text-align:center;margin-bottom:8px;background:linear-gradient(135deg,var(--pk),var(--lv));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:2px}
+.sec-sub{text-align:center;color:rgba(255,255,255,.4);font-size:13px;letter-spacing:2px;margin-bottom:36px;text-transform:uppercase}
+
+/* REVEAL */
+.reveal{opacity:0;transform:translateY(40px);transition:opacity .8s ease,transform .8s ease}
+.reveal.on{opacity:1;transform:translateY(0)}
+
+/* ═══ AI ANALYZER ═══ */
+.terminal{background:#000;border-radius:16px;padding:24px;font-family:'Share Tech Mono',monospace;font-size:13px;border:1px solid rgba(168,85,247,.3);box-shadow:0 0 40px rgba(168,85,247,.1);overflow:hidden}
+.t-header{display:flex;gap:8px;margin-bottom:16px}
+.t-dot{width:12px;height:12px;border-radius:50%}
+.t-line{color:#00ff88;line-height:1.8;min-height:20px}
+.t-prompt{color:var(--lv)}
+.ai-stats{display:grid;gap:14px;margin-top:24px}
+.ai-stat{display:flex;align-items:center;gap:12px}
+.ai-stat-name{font-size:12px;letter-spacing:2px;color:rgba(255,255,255,.5);width:140px;flex-shrink:0;font-family:'Share Tech Mono',monospace}
+.ai-bar-wrap{flex:1;height:6px;background:rgba(255,255,255,.1);border-radius:6px;overflow:hidden}
+.ai-bar{height:100%;width:0;border-radius:6px;transition:width 1.5s cubic-bezier(.4,0,.2,1);box-shadow:0 0 8px currentColor}
+.ai-val{font-family:'Orbitron',sans-serif;font-size:11px;color:var(--pk);width:36px;text-align:right}
+.ai-badge{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,rgba(251,191,36,.1),rgba(168,85,247,.1));border:1px solid rgba(251,191,36,.3);border-radius:50px;padding:10px 20px;font-family:'Orbitron',sans-serif;font-size:12px;color:var(--gd);letter-spacing:2px;margin-top:20px;box-shadow:0 0 20px rgba(251,191,36,.15)}
+
+/* ═══ STAR UNIVERSE ═══ */
+#starUniverse{width:100%;aspect-ratio:1/1;max-height:480px;border-radius:24px;border:1px solid var(--border);position:relative;overflow:hidden;background:radial-gradient(ellipse at center,#0d0030 0%,#000 70%);cursor:crosshair}
+.star-wish{position:absolute;background:rgba(0,0,0,.85);border:1px solid var(--lv);border-radius:12px;padding:10px 14px;font-size:12px;color:var(--cy);pointer-events:none;transform:translate(-50%,-130%);white-space:nowrap;animation:wishPop .3s cubic-bezier(.34,1.56,.64,1) forwards;z-index:100;backdrop-filter:blur(10px);max-width:200px;text-align:center;white-space:normal}
+@keyframes wishPop{from{opacity:0;transform:translate(-50%,-110%) scale(.7)}to{opacity:1;transform:translate(-50%,-130%) scale(1)}}
+
+/* ═══ ACHIEVEMENTS ═══ */
+.ach-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.ach-card{background:var(--glass);border:1px solid var(--border);border-radius:20px;padding:22px;display:flex;align-items:center;gap:16px;opacity:.4;transition:all .5s ease;position:relative;overflow:hidden}
+.ach-card.unlocked{opacity:1;border-color:rgba(251,191,36,.4);box-shadow:0 0 30px rgba(251,191,36,.1)}
+.ach-card.unlocked::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(251,191,36,.05),transparent);pointer-events:none}
+.ach-icon{font-size:36px;filter:grayscale(1);transition:filter .5s}
+.ach-card.unlocked .ach-icon{filter:none}
+.ach-info{flex:1}
+.ach-name{font-family:'Orbitron',sans-serif;font-size:12px;letter-spacing:1px;color:rgba(255,255,255,.7);margin-bottom:4px}
+.ach-desc{font-size:11px;color:rgba(255,255,255,.35);line-height:1.4}
+.ach-badge{position:absolute;top:12px;right:12px;font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:1px;color:var(--gd);opacity:0;transition:opacity .5s}
+.ach-card.unlocked .ach-badge{opacity:1}
+
+/* ═══ GIFT BOX ═══ */
+.gift-wrap{text-align:center}
+#giftBox{font-size:80px;cursor:pointer;display:block;filter:drop-shadow(0 0 20px rgba(251,191,36,.4));transition:transform .3s;user-select:none}
+#giftBox:hover{transform:scale(1.1) rotate(5deg)}
+#giftBox:active{transform:scale(.9)}
+.gift-msg{margin-top:20px;font-family:'Dancing Script',cursive;font-size:24px;color:var(--pk);min-height:36px;transition:all .4s;text-shadow:0 0 20px rgba(255,107,157,.4)}
+.gift-count{font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:3px;color:rgba(255,255,255,.3);margin-top:8px}
+.gift-sparkle{position:absolute;pointer-events:none;font-size:20px;animation:sparkleOut .8s ease forwards}
+@keyframes sparkleOut{0%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(0)}}
+
+/* ═══ PREDICTIONS ═══ */
+.holo-screen{background:linear-gradient(135deg,rgba(6,182,212,.05),rgba(168,85,247,.05));border:1px solid rgba(6,182,212,.2);border-radius:20px;padding:28px;text-align:center;position:relative;overflow:hidden}
+.holo-screen::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(6,182,212,.02) 2px,rgba(6,182,212,.02) 4px);pointer-events:none}
+.pred-text{font-family:'Share Tech Mono',monospace;font-size:clamp(14px,3vw,18px);color:var(--cy);line-height:1.6;min-height:80px;text-shadow:0 0 10px var(--cy)}
+.pred-btn{background:linear-gradient(135deg,var(--cy),var(--lv));color:white;border:none;border-radius:50px;padding:14px 36px;font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;cursor:pointer;margin-top:20px;box-shadow:0 0 20px rgba(6,182,212,.3);transition:all .3s}
+.pred-btn:hover{transform:scale(1.05);box-shadow:0 0 30px rgba(6,182,212,.5)}
+
+/* ═══ ADVENTURE ═══ */
+.adv-scene{background:var(--glass);border:1px solid var(--border);border-radius:20px;padding:28px;min-height:200px;transition:all .5s ease}
+.adv-text{font-size:clamp(14px,3vw,17px);color:rgba(255,255,255,.85);line-height:1.7;margin-bottom:24px;font-family:'Dancing Script',cursive;font-size:clamp(17px,4vw,22px)}
+.adv-choices{display:flex;flex-wrap:wrap;gap:10px}
+.adv-btn{background:var(--glass2);border:1px solid var(--border);border-radius:50px;padding:10px 22px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:600;color:white;cursor:pointer;transition:all .3s;flex:1;min-width:140px;text-align:center}
+.adv-btn:hover{background:linear-gradient(135deg,rgba(255,107,157,.2),rgba(168,85,247,.2));border-color:var(--pk);box-shadow:0 0 15px rgba(255,107,157,.2)}
+
+/* ═══ SPIN WHEEL ═══ */
+.wheel-wrap{display:flex;flex-direction:column;align-items:center;gap:20px}
+#wheelCanvas{border-radius:50%;box-shadow:0 0 40px rgba(168,85,247,.3),0 0 80px rgba(255,107,157,.1);max-width:min(320px,80vw)}
+.spin-btn{background:linear-gradient(135deg,var(--pk),var(--lv));color:white;border:none;border-radius:50px;padding:14px 44px;font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;cursor:pointer;box-shadow:0 0 24px rgba(255,107,157,.4);transition:all .3s}
+.spin-btn:hover{transform:scale(1.05)}
+.spin-btn:disabled{opacity:.5;cursor:not-allowed}
+.spin-result{font-family:'Dancing Script',cursive;font-size:22px;color:var(--gd);min-height:36px;text-align:center;text-shadow:0 0 20px rgba(251,191,36,.4)}
+
+/* ═══ CRYSTALS ═══ */
+.crystal-field{position:relative;width:100%;height:360px;background:radial-gradient(ellipse at center,#050020,#000);border-radius:24px;border:1px solid var(--border);overflow:hidden;cursor:crosshair}
+.crystal{position:absolute;font-size:24px;cursor:pointer;transition:transform .3s;animation:crystalFloat 3s ease-in-out infinite;user-select:none;filter:drop-shadow(0 0 8px var(--lv))}
+.crystal:hover{transform:scale(1.3)!important}
+.crystal.found{opacity:0;pointer-events:none;transition:opacity .5s}
+@keyframes crystalFloat{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-8px) rotate(5deg)}}
+.crystal-progress{display:flex;align-items:center;gap:12px;margin-top:16px}
+.cp-bar{flex:1;height:6px;background:rgba(255,255,255,.1);border-radius:6px;overflow:hidden}
+.cp-fill{height:100%;width:0;background:linear-gradient(90deg,var(--lv),var(--pk));border-radius:6px;transition:width .5s ease}
+.cp-txt{font-family:'Orbitron',sans-serif;font-size:11px;color:var(--lv);letter-spacing:1px}
+
+/* ═══ FIREWORKS ═══ */
+#fireworks-section{padding:80px 20px;text-align:center;position:relative;z-index:10}
+.fw-btn{background:linear-gradient(135deg,var(--pk),var(--lv),var(--bl));color:white;border:none;border-radius:50px;padding:18px 50px;font-family:'Orbitron',sans-serif;font-size:15px;font-weight:700;letter-spacing:2px;cursor:pointer;box-shadow:0 0 30px rgba(168,85,247,.4);transition:all .3s;position:relative;overflow:hidden}
+.fw-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,var(--bl),var(--pk));opacity:0;transition:opacity .3s}
+.fw-btn:hover{transform:scale(1.06);box-shadow:0 0 50px rgba(168,85,247,.6)}
+.fw-btn:hover::before{opacity:1}
+.fw-btn span{position:relative;z-index:1}
+
+/* ═══ SECRET LETTER ═══ */
+.letter-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(20px);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .4s}
+.letter-modal.on{opacity:1;pointer-events:all}
+.letter-inner{background:linear-gradient(145deg,rgba(10,0,30,.95),rgba(5,0,20,.95));border:1px solid rgba(168,85,247,.3);border-radius:28px;padding:48px 36px;max-width:500px;width:100%;position:relative;transform:scale(.8);transition:transform .5s cubic-bezier(.34,1.56,.64,1);box-shadow:0 0 60px rgba(168,85,247,.2)}
+.letter-modal.on .letter-inner{transform:scale(1)}
+.letter-inner::before{content:'🌸';font-size:120px;position:absolute;bottom:-20px;right:-20px;opacity:.05}
+.lt-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:50%;width:32px;height:32px;cursor:pointer;color:rgba(255,255,255,.5);font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .3s}
+.lt-close:hover{background:rgba(255,107,157,.2);color:var(--pk)}
+.lt-lbl{font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:4px;color:var(--lv);margin-bottom:20px;text-transform:uppercase}
+.lt-body{font-family:'Dancing Script',cursive;font-size:clamp(17px,4vw,22px);color:rgba(255,255,255,.85);line-height:1.8;min-height:100px}
+.lt-sign{font-family:'Dancing Script',cursive;font-size:20px;color:var(--pk);text-align:right;margin-top:20px;opacity:0;transition:opacity .8s}
+.lt-open-btn{background:linear-gradient(135deg,var(--pk),var(--lv));color:white;border:none;border-radius:50px;padding:14px 38px;font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;cursor:pointer;box-shadow:0 0 20px rgba(255,107,157,.3);transition:all .3s}
+.lt-open-btn:hover{transform:scale(1.05)}
+
+/* NAV DOTS */
+.nav-dots{position:fixed;right:16px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:8px;z-index:500}
+.nd{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.2);cursor:pointer;transition:all .3s;border:1px solid rgba(255,255,255,.2)}
+.nd.active{background:var(--pk);box-shadow:0 0 8px var(--pk);transform:scale(1.3)}
+
+/* COUNTDOWN */
+.cd-row{display:flex;gap:10px;justify-content:center;margin-bottom:28px}
+.cd-b{display:flex;flex-direction:column;align-items:center;gap:4px}
+.cd-n{font-family:'Orbitron',sans-serif;font-size:28px;background:linear-gradient(135deg,var(--pk),var(--lv));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:12px;padding:10px 16px;min-width:60px;text-align:center;font-size:clamp(20px,5vw,28px)}
+.cd-n span{background:linear-gradient(135deg,var(--pk),var(--lv));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.cd-u{font-size:9px;letter-spacing:2px;color:rgba(255,255,255,.3);text-transform:uppercase;font-family:'Orbitron',sans-serif}
+.cd-sep{font-family:'Orbitron',sans-serif;font-size:24px;color:var(--pk);padding-top:8px;opacity:.5}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes popIn{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
+@keyframes glow{0%,100%{box-shadow:0 0 20px rgba(168,85,247,.3)}50%{box-shadow:0 0 40px rgba(168,85,247,.6)}}
+</style>
+</head>
+<body>
+
+<!-- CURSOR -->
+<div class="cursor" id="cursor"></div>
+<div class="cur-ring" id="cring"></div>
+
+<!-- BG CANVAS -->
+<canvas id="bgCanvas"></canvas>
+<canvas id="fxCanvas"></canvas>
+
+<!-- LOADER -->
+<div id="loader">
+  <div style="text-align:center">
+    <div style="font-family:'Orbitron',sans-serif;font-size:clamp(22px,5vw,36px);font-weight:900;background:linear-gradient(135deg,var(--pk),var(--lv),var(--bl));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px;filter:drop-shadow(0 0 30px rgba(168,85,247,.5))">BIRTHDAY UNIVERSE</div>
+    <div class="ld-title" id="ldTitle">Initializing Birthday Universe...</div>
+    <div class="ld-status" id="ldStatus">Connecting to galaxy servers...</div>
+    <div class="ld-bar-wrap"><div class="ld-bar" id="ldBar"></div></div>
+    <div class="ld-pct" id="ldPct">0%</div>
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="nav-dots" id="navDots"></div>
+
+<!-- HERO -->
+<section id="hero" data-nav="Home">
+  <div style="position:relative;z-index:2">
+    <div class="h-date">✦ November 20 · Cosmic Birthday ✦</div>
+    <div class="h-greeting">THE UNIVERSE PRESENTS</div>
+    <div class="h-hb">Happy Birthday</div>
+    <div class="h-name"><span id="heroName"></span><span class="h-cursor" id="hCursor"></span></div>
+    <div class="h-sub">a galaxy was born on this day 🌌</div>
+
+    <!-- Countdown -->
+    <div class="cd-row" id="cdRow">
+      <div class="cd-b"><div class="cd-n"><span id="cdD">--</span></div><div class="cd-u">days</div></div>
+      <div class="cd-sep">:</div>
+      <div class="cd-b"><div class="cd-n"><span id="cdH">--</span></div><div class="cd-u">hrs</div></div>
+      <div class="cd-sep">:</div>
+      <div class="cd-b"><div class="cd-n"><span id="cdM">--</span></div><div class="cd-u">min</div></div>
+      <div class="cd-sep">:</div>
+      <div class="cd-b"><div class="cd-n"><span id="cdS">--</span></div><div class="cd-u">sec</div></div>
+    </div>
+    <div class="h-scroll"><span>explore the universe</span><div class="h-arr"></div></div>
+  </div>
+</section>
+
+<!-- AI ANALYZER -->
+<section id="ai-section" class="section reveal" data-nav="AI">
+  <div class="sec-title">🤖 AI Birthday Analyzer</div>
+  <div class="sec-sub">Scanning the birthday person...</div>
+  <div class="glass-card">
+    <div class="terminal">
+      <div class="t-header"><div class="t-dot" style="background:#ff5f57"></div><div class="t-dot" style="background:#ffbd2e"></div><div class="t-dot" style="background:#28c940"></div></div>
+      <div id="termLines"></div>
+    </div>
+    <div class="ai-stats" id="aiStats" style="display:none;margin-top:24px">
+      <div class="ai-stat"><span class="ai-stat-name">HAPPINESS</span><div class="ai-bar-wrap"><div class="ai-bar" style="background:linear-gradient(90deg,#ff6b9d,#fbbf24);box-shadow:0 0 8px #ff6b9d" data-val="98" id="b1"></div></div><span class="ai-val" id="v1">0</span></div>
+      <div class="ai-stat"><span class="ai-stat-name">KINDNESS</span><div class="ai-bar-wrap"><div class="ai-bar" style="background:linear-gradient(90deg,#06b6d4,#a855f7);box-shadow:0 0 8px #06b6d4" data-val="96" id="b2"></div></div><span class="ai-val" id="v2">0</span></div>
+      <div class="ai-stat"><span class="ai-stat-name">HUMOR</span><div class="ai-bar-wrap"><div class="ai-bar" style="background:linear-gradient(90deg,#a855f7,#ec4899);box-shadow:0 0 8px #a855f7" data-val="91" id="b3"></div></div><span class="ai-val" id="v3">0</span></div>
+      <div class="ai-stat"><span class="ai-stat-name">RADIANCE</span><div class="ai-bar-wrap"><div class="ai-bar" style="background:linear-gradient(90deg,#fbbf24,#f97316);box-shadow:0 0 8px #fbbf24" data-val="100" id="b4"></div></div><span class="ai-val" id="v4">0</span></div>
+      <div class="ai-stat"><span class="ai-stat-name">MAIN CHARACTER</span><div class="ai-bar-wrap"><div class="ai-bar" style="background:linear-gradient(90deg,#3b82f6,#06b6d4);box-shadow:0 0 8px #3b82f6" data-val="100" id="b5"></div></div><span class="ai-val" id="v5">0</span></div>
+    </div>
+    <div id="aiBadge" style="display:none;text-align:center">
+      <div class="ai-badge">⭐ LEGENDARY STATUS: COSMIC QUEEN ⭐</div>
+    </div>
+  </div>
+</section>
+
+<!-- STAR UNIVERSE -->
+<section id="star-section" class="section reveal" data-nav="Stars">
+  <div class="sec-title">🌌 Birthday Universe</div>
+  <div class="sec-sub">Click the stars to reveal wishes 🌟 Find golden stars for secrets!</div>
+  <div id="starUniverse"></div>
+</section>
+
+<!-- ACHIEVEMENTS -->
+<section id="ach-section" class="section reveal" data-nav="Achievements">
+  <div class="sec-title">🏆 Achievement Hall</div>
+  <div class="sec-sub">Unlocking one by one...</div>
+  <div class="ach-grid" id="achGrid"></div>
+</section>
+
+<!-- GIFT BOX -->
+<section id="gift-section" class="section reveal" data-nav="Gifts">
+  <div class="sec-title">🎁 Mystery Gift Generator</div>
+  <div class="sec-sub">Click the box for infinite surprises!</div>
+  <div class="glass-card gift-wrap" style="position:relative;overflow:visible">
+    <div id="giftBox" onclick="openGift(event)">🎁</div>
+    <div class="gift-msg" id="giftMsg">Tap the box to reveal your gift!</div>
+    <div class="gift-count" id="giftCount">0 gifts opened</div>
+  </div>
+</section>
+
+<!-- PREDICTIONS -->
+<section id="pred-section" class="section reveal" data-nav="Predictions">
+  <div class="sec-title">🔮 Future Prediction Machine</div>
+  <div class="sec-sub">Peek into your cosmic future</div>
+  <div class="holo-screen">
+    <div style="font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:4px;color:var(--lv);margin-bottom:20px">HOLOGRAPHIC PREDICTION SYSTEM v2.0</div>
+    <div class="pred-text" id="predText">Press the button to activate prediction system...</div>
+    <button class="pred-btn" onclick="getPrediction()">⚡ GENERATE PREDICTION</button>
+  </div>
+</section>
+
+<!-- ADVENTURE -->
+<section id="adv-section" class="section reveal" data-nav="Adventure">
+  <div class="sec-title">🚀 Birthday Adventure</div>
+  <div class="sec-sub">Your choices shape the story</div>
+  <div class="adv-scene" id="advScene">
+    <div class="adv-text" id="advText">You wake up on your birthday to find a mysterious glowing portal in your room. It pulses with cosmic energy, as if the universe itself is inviting you somewhere magical. What do you do?</div>
+    <div class="adv-choices" id="advChoices">
+      <button class="adv-btn" onclick="advChoice(0)">✨ Step through the portal</button>
+      <button class="adv-btn" onclick="advChoice(1)">🔭 Observe it from a distance</button>
+      <button class="adv-btn" onclick="advChoice(2)">📸 Take a photo first</button>
+    </div>
+  </div>
+</section>
+
+<!-- SPIN WHEEL -->
+<section id="spin-section" class="section reveal" data-nav="Spin">
+  <div class="sec-title">🎰 Spin Wheel of Surprises</div>
+  <div class="sec-sub">Every spin is a birthday surprise!</div>
+  <div class="wheel-wrap">
+    <div style="position:relative">
+      <canvas id="wheelCanvas" width="320" height="320"></canvas>
+      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:36px;height:36px;background:white;border-radius:50%;border:3px solid #333;z-index:10;pointer-events:none"></div>
+      <div style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:28px;z-index:11;filter:drop-shadow(0 0 8px rgba(255,107,157,.6))">▼</div>
+    </div>
+    <button class="spin-btn" id="spinBtn" onclick="spinWheel()">🎰 SPIN!</button>
+    <div class="spin-result" id="spinResult"></div>
+  </div>
+</section>
+
+<!-- CRYSTALS -->
+<section id="crystal-section" class="section reveal" data-nav="Crystals">
+  <div class="sec-title">💎 Birthday Escape Mission</div>
+  <div class="sec-sub">Find all 8 hidden crystals to unlock the final message!</div>
+  <div class="crystal-field" id="crystalField"></div>
+  <div class="crystal-progress">
+    <div class="cp-txt" id="cpTxt">0 / 8 crystals</div>
+    <div class="cp-bar"><div class="cp-fill" id="cpFill"></div></div>
+  </div>
+</section>
+
+<!-- FIREWORKS -->
+<section id="fireworks-section" data-nav="Finale">
+  <div class="sec-title" style="padding-top:80px">🎆 Fireworks Finale</div>
+  <div class="sec-sub" style="margin-bottom:32px">Launch the grand birthday celebration!</div>
+  <div style="text-align:center;padding-bottom:80px">
+    <button class="fw-btn" onclick="launchFireworks()"><span>🎆 LAUNCH FIREWORKS!</span></button>
+  </div>
+</section>
+
+<!-- SECRET LETTER -->
+<div class="letter-modal" id="letterModal">
+  <div class="letter-inner">
+    <button class="lt-close" onclick="closeLetter()">✕</button>
+    <div class="lt-lbl">💌 Secret Birthday Letter</div>
+    <div class="lt-body" id="ltBody"><span style="display:inline-block;width:2px;height:1em;background:var(--pk);animation:blink .7s steps(1) infinite;vertical-align:middle"></span></div>
+    <div class="lt-sign" id="ltSign">— someone who notices you 🌸</div>
+  </div>
+</div>
+
+<!-- FINAL UNLOCK TOAST -->
+<div id="toast" style="position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(100px);background:linear-gradient(135deg,rgba(168,85,247,.9),rgba(255,107,157,.9));border-radius:50px;padding:14px 28px;font-family:'Orbitron',sans-serif;font-size:12px;letter-spacing:2px;color:white;z-index:5000;transition:transform .5s cubic-bezier(.34,1.56,.64,1);box-shadow:0 0 30px rgba(168,85,247,.4);text-align:center;max-width:90vw;backdrop-filter:blur(10px)"></div>
+
+<script>
+// ══════════════════════════════════════
+//  CURSOR
+// ══════════════════════════════════════
+const curEl=document.getElementById('cursor'),crEl=document.getElementById('cring');
+let mx=0,my=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;curEl.style.left=mx+'px';curEl.style.top=my+'px';crEl.style.left=mx+'px';crEl.style.top=my+'px';});
+document.addEventListener('touchmove',e=>{mx=e.touches[0].clientX;my=e.touches[0].clientY;});
+
+// ══════════════════════════════════════
+//  BG CANVAS — STARFIELD
+// ══════════════════════════════════════
+const bgC=document.getElementById('bgCanvas');
+const bg=bgC.getContext('2d');
+let W=bgC.width=window.innerWidth,H=bgC.height=window.innerHeight;
+window.addEventListener('resize',()=>{W=bgC.width=window.innerWidth;H=bgC.height=window.innerHeight;});
+
+const STARS=[];
+for(let i=0;i<200;i++)STARS.push({x:Math.random()*W,y:Math.random()*H,r:.3+Math.random()*1.2,speed:.1+Math.random()*.3,twinkle:Math.random()*Math.PI*2,c:['#fff','#c4b5fd','#fbcfe8','#93c5fd','#fde68a'][Math.floor(Math.random()*5)]});
+const SHOOTING=[];
+function spawnShoot(){SHOOTING.push({x:Math.random()*W,y:Math.random()*H*.4,vx:3+Math.random()*6,vy:1+Math.random()*3,life:1,tail:[]});}
+setInterval(spawnShoot,2500);
+
+function animBG(){
+  bg.clearRect(0,0,W,H);
+  // Nebula
+  const nb=bg.createRadialGradient(W*.3,H*.3,0,W*.3,H*.3,W*.6);
+  nb.addColorStop(0,'rgba(88,28,135,.12)');nb.addColorStop(.5,'rgba(30,27,75,.06)');nb.addColorStop(1,'transparent');
+  bg.fillStyle=nb;bg.fillRect(0,0,W,H);
+  const nb2=bg.createRadialGradient(W*.7,H*.7,0,W*.7,H*.7,W*.5);
+  nb2.addColorStop(0,'rgba(157,23,77,.08)');nb2.addColorStop(1,'transparent');
+  bg.fillStyle=nb2;bg.fillRect(0,0,W,H);
+
+  STARS.forEach(s=>{
+    s.twinkle+=.02;s.y-=s.speed;if(s.y<0)s.y=H;
+    const a=.4+Math.sin(s.twinkle)*.3;
+    bg.beginPath();bg.arc(s.x,s.y,s.r,0,Math.PI*2);bg.fillStyle=s.c;bg.globalAlpha=a;bg.fill();
+  });
+  bg.globalAlpha=1;
+
+  for(let i=SHOOTING.length-1;i>=0;i--){
+    const s=SHOOTING[i];
+    s.tail.push({x:s.x,y:s.y});if(s.tail.length>12)s.tail.shift();
+    s.x+=s.vx;s.y+=s.vy;s.life-=.02;
+    if(s.life<=0||s.x>W){SHOOTING.splice(i,1);continue;}
+    bg.beginPath();
+    s.tail.forEach((p,j)=>{if(j===0)bg.moveTo(p.x,p.y);else bg.lineTo(p.x,p.y);});
+    bg.strokeStyle=`rgba(255,255,255,${s.life*.6})`;bg.lineWidth=1.5;bg.stroke();
+    bg.beginPath();bg.arc(s.x,s.y,1.5,0,Math.PI*2);bg.fillStyle='white';bg.globalAlpha=s.life;bg.fill();
+    bg.globalAlpha=1;
+  }
+  requestAnimationFrame(animBG);
+}
+animBG();
+
+// ══════════════════════════════════════
+//  LOADER
+// ══════════════════════════════════════
+const ldSteps=['Connecting to galaxy servers...','Loading star coordinates...','Calibrating happiness levels...','Scanning for birthday vibes...','Activating cosmic confetti...','Preparing surprise modules...','Almost ready...','Launching Birthday Universe! 🚀'];
+let ldPct=0;
+function runLoader(){
+  const bar=document.getElementById('ldBar'),pct=document.getElementById('ldPct'),status=document.getElementById('ldStatus');
+  const iv=setInterval(()=>{
+    ldPct+=Math.random()*3+1;if(ldPct>100)ldPct=100;
+    bar.style.width=ldPct+'%';pct.textContent=Math.floor(ldPct)+'%';
+    status.textContent=ldSteps[Math.min(Math.floor(ldPct/13),ldSteps.length-1)];
+    if(ldPct>=100){clearInterval(iv);setTimeout(startApp,600);}
+  },80);
+}
+runLoader();
+
+function startApp(){
+  const ld=document.getElementById('loader');ld.classList.add('out');
+  setTimeout(()=>ld.style.display='none',1100);
+  typeHeroName();startCountdown();buildNav();initScrollReveal();buildStarUniverse();buildAchievements();buildWheel();buildCrystals();
+  setTimeout(startAIAnalyzer,1500);
+}
+
+// ══════════════════════════════════════
+//  HERO NAME TYPEWRITER
+// ══════════════════════════════════════
+function typeHeroName(){
+  const el=document.getElementById('heroName'),cur=document.getElementById('hCursor');
+  const name='Sarvika';let i=0;
+  el.style.opacity='1';
+  function t(){if(i<=name.length){el.textContent=name.substring(0,i);i++;setTimeout(t,i===0?500:120);}else{setTimeout(()=>cur.style.display='none',2000);}}
+  setTimeout(t,1200);
+}
+
+// ══════════════════════════════════════
+//  COUNTDOWN
+// ══════════════════════════════════════
+function startCountdown(){
+  function tick(){const now=new Date(),t=new Date(now.getFullYear(),10,20);if(now>t)t.setFullYear(t.getFullYear()+1);const d=t-now;document.getElementById('cdD').textContent=String(Math.floor(d/86400000)).padStart(2,'0');document.getElementById('cdH').textContent=String(Math.floor((d%86400000)/3600000)).padStart(2,'0');document.getElementById('cdM').textContent=String(Math.floor((d%3600000)/60000)).padStart(2,'0');document.getElementById('cdS').textContent=String(Math.floor((d%60000)/1000)).padStart(2,'0');}
+  tick();setInterval(tick,1000);
+}
+
+// ══════════════════════════════════════
+//  NAV DOTS
+// ══════════════════════════════════════
+function buildNav(){
+  const secs=document.querySelectorAll('[data-nav]'),wrap=document.getElementById('navDots');
+  secs.forEach((s,i)=>{const d=document.createElement('div');d.className='nd';d.title=s.dataset.nav;d.onclick=()=>s.scrollIntoView({behavior:'smooth'});wrap.appendChild(d);});
+  const upd=()=>{const sy=window.scrollY+window.innerHeight/2;secs.forEach((s,i)=>{const nd=wrap.children[i];if(s.offsetTop<=sy&&s.offsetTop+s.offsetHeight>sy)nd.classList.add('active');else nd.classList.remove('active');});};
+  window.addEventListener('scroll',upd);upd();
+}
+
+// ══════════════════════════════════════
+//  SCROLL REVEAL
+// ══════════════════════════════════════
+function initScrollReveal(){
+  const els=document.querySelectorAll('.reveal');
+  const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('on');if(e.target.id==='ai-section')setTimeout(startAIAnalyzer,400);if(e.target.id==='ach-section')setTimeout(unlockAchievements,600);}});},{threshold:.1});
+  els.forEach(el=>obs.observe(el));
+}
+
+// ══════════════════════════════════════
+//  AI ANALYZER
+// ══════════════════════════════════════
+let aiDone=false;
+function startAIAnalyzer(){
+  if(aiDone)return;aiDone=true;
+  const lines=[
+    {t:'> Initializing AI Birthday Scanner v9.9...',c:'#00ff88',d:0},
+    {t:'> Subject detected: Sarvika',c:'#c4b5fd',d:600},
+    {t:'> Running personality matrix scan...',c:'#00ff88',d:1200},
+    {t:'> Analyzing happiness coefficient...',c:'#00ff88',d:1800},
+    {t:'> Detecting kindness levels: MAXIMUM',c:'#fbbf24',d:2400},
+    {t:'> Calculating legendary status...',c:'#00ff88',d:3000},
+    {t:'> SCAN COMPLETE ✓',c:'#00ff88',d:3600},
+    {t:'> Result: COSMIC-LEVEL HUMAN DETECTED',c:'#ff6b9d',d:4000},
+  ];
+  const wrap=document.getElementById('termLines');wrap.innerHTML='';
+  lines.forEach(l=>{setTimeout(()=>{const d=document.createElement('div');d.className='t-line';d.textContent=l.t;d.style.color=l.c;d.style.opacity='0';d.style.transition='opacity .4s';wrap.appendChild(d);setTimeout(()=>d.style.opacity='1',50);wrap.scrollTop=wrap.scrollHeight;},l.d);});
+  setTimeout(()=>{document.getElementById('aiStats').style.display='grid';[1,2,3,4,5].forEach(i=>{setTimeout(()=>{const bar=document.getElementById('b'+i),val=document.getElementById('v'+i),target=parseInt(bar.dataset.val);bar.style.width=target+'%';let c=0;const iv=setInterval(()=>{c+=2;val.textContent=Math.min(c,target);if(c>=target)clearInterval(iv);},20);},i*200);});},4500);
+  setTimeout(()=>{document.getElementById('aiBadge').style.display='block';},6500);
+}
+
+// ══════════════════════════════════════
+//  STAR UNIVERSE
+// ══════════════════════════════════════
+function buildStarUniverse(){
+  const field=document.getElementById('starUniverse');
+  const wishes=['You are a shooting star!✨','The universe loves you!🌌','Pure cosmic energy!💫','Born to shine!⭐','Your smile lights galaxies!🌟','Magic follows you!🔮','Kindness is your superpower!💖','The stars aligned for you!🎇','Infinite happiness awaits!🎆','You are legendary!👑'];
+  const secretMsgs=['🌟 RARE STAR FOUND! You are destined for greatness!','💛 GOLDEN STAR: The universe has BIG plans for you!','✨ SECRET UNLOCKED: You are someone\'s favourite person!','🌠 COSMIC SECRET: Your future is absolutely beautiful!'];
+  
+  const stars=[];
+  for(let i=0;i<120;i++){
+    const isGold=i<6;
+    const s=document.createElement('div');
+    s.style.cssText=`position:absolute;left:${5+Math.random()*90}%;top:${5+Math.random()*90}%;font-size:${isGold?18:8+Math.random()*12}px;cursor:pointer;user-select:none;animation:crystalFloat ${2+Math.random()*3}s ease-in-out ${Math.random()*2}s infinite;transition:transform .2s;z-index:${isGold?10:1}`;
+    s.textContent=isGold?'⭐':'✦';
+    s.style.color=isGold?'#fbbf24':`rgba(${170+Math.floor(Math.random()*80)},${100+Math.floor(Math.random()*100)},${200+Math.floor(Math.random()*55)},${.5+Math.random()*.5})`;
+    s.style.filter=isGold?'drop-shadow(0 0 8px #fbbf24)':'none';
+    stars.push({el:s,gold:isGold,msg:isGold?secretMsgs[i%secretMsgs.length]:wishes[Math.floor(Math.random()*wishes.length)]});
+    s.onclick=(e)=>{
+      e.stopPropagation();
+      const star=stars.find(x=>x.el===s);
+      const wish=document.createElement('div');wish.className='star-wish';
+      wish.innerHTML=star.gold?`<div style="color:#fbbf24;font-weight:700;margin-bottom:4px">✨ SECRET ✨</div>${star.msg}`:star.msg;
+      wish.style.cssText+=`;left:${s.style.left};top:${s.style.top}`;
+      field.appendChild(wish);
+      setTimeout(()=>{wish.style.transition='opacity .5s';wish.style.opacity='0';setTimeout(()=>wish.remove(),500);},2500);
+      s.style.transform='scale(1.5)';setTimeout(()=>s.style.transform='',300);
+    };
+    field.appendChild(s);
+  }
+}
+
+// ══════════════════════════════════════
+//  ACHIEVEMENTS
+// ══════════════════════════════════════
+const ACHS=[
+  {icon:'🏆',name:'CERTIFIED LEGEND',desc:'Status confirmed by the universe itself',delay:0},
+  {icon:'💖',name:'KINDNESS CHAMPION',desc:'Heart of gold, spirit of diamond',delay:400},
+  {icon:'😂',name:'SMILE GENERATOR',desc:'Makes everyone around her smile',delay:800},
+  {icon:'⭐',name:'MAIN CHARACTER',desc:'The universe revolves around you',delay:1200},
+  {icon:'🌟',name:'BEST FRIEND AWARD',desc:'The most loyal, caring human alive',delay:1600},
+  {icon:'👑',name:'COSMIC QUEEN',desc:'Royalty of the birthday universe',delay:2000},
+  {icon:'🔮',name:'MYSTERY KEEPER',desc:'Deep, thoughtful and enchanting',delay:2400},
+  {icon:'🚀',name:'DREAM CHASER',desc:'Destined for infinite adventures',delay:2800},
+];
+let achBuilt=false;
+function buildAchievements(){
+  if(achBuilt)return;achBuilt=true;
+  const grid=document.getElementById('achGrid');
+  ACHS.forEach(a=>{
+    const c=document.createElement('div');c.className='ach-card';
+    c.innerHTML=`<div class="ach-icon">${a.icon}</div><div class="ach-info"><div class="ach-name">${a.name}</div><div class="ach-desc">${a.desc}</div></div><div class="ach-badge">UNLOCKED</div>`;
+    grid.appendChild(c);
+  });
+}
+function unlockAchievements(){
+  const cards=document.querySelectorAll('.ach-card');
+  cards.forEach((c,i)=>{setTimeout(()=>{c.classList.add('unlocked');showToast('🏆 Achievement Unlocked: '+ACHS[i].name,1800);},ACHS[i].delay);});
+}
+
+// ══════════════════════════════════════
+//  GIFT BOX
+// ══════════════════════════════════════
+let giftCount=0;
+const gifts=['🌸 A day full of laughter and joy!','🌟 Endless happiness, always!','💝 Every dream coming true this year!','🎵 A playlist of perfect moments!','🌈 Adventures waiting around every corner!','✨ Magic in every ordinary moment!','🦋 Freedom to be completely yourself!','💖 Unconditional love from the universe!','🎭 Stories worth telling for a lifetime!','🌙 Beautiful nights under the stars!','🔮 Surprising twists that lead to joy!','🌺 Mornings that feel like magic!','💫 A year where everything clicks!','🎪 Unexpected fun at every turn!','👑 The confidence to own every room!'];
+function openGift(e){
+  giftCount++;
+  const box=document.getElementById('giftBox'),msg=document.getElementById('giftMsg');
+  const g=gifts[(giftCount-1)%gifts.length];
+  box.style.transform='scale(0) rotate(20deg)';
+  setTimeout(()=>{box.textContent=['🎁','🎀','🎊','🎉','🎆'][Math.floor(Math.random()*5)];box.style.transform='scale(1.2)';setTimeout(()=>box.style.transform='scale(1)',200);},200);
+  msg.style.opacity='0';setTimeout(()=>{msg.textContent=g;msg.style.opacity='1';},300);
+  document.getElementById('giftCount').textContent=giftCount+' gift'+(giftCount>1?'s':'')+' opened';
+  // Sparkles
+  const rect=e.currentTarget.getBoundingClientRect();
+  for(let i=0;i<8;i++){const sp=document.createElement('div');sp.className='gift-sparkle';const ang=i/8*Math.PI*2,dist=40+Math.random()*30;sp.style.cssText=`left:${e.clientX}px;top:${e.clientY}px;--dx:${Math.cos(ang)*dist}px;--dy:${Math.sin(ang)*dist}px;`;sp.textContent=['✨','💫','⭐','🌟','💖'][Math.floor(Math.random()*5)];document.body.appendChild(sp);setTimeout(()=>sp.remove(),900);}
+}
+
+// ══════════════════════════════════════
+//  PREDICTIONS
+// ══════════════════════════════════════
+const PREDS=['This year, you will stumble upon a joy so pure it will take your breath away. The universe has marked your path with golden light. 🌟','A surprise adventure is waiting for you in the next few months — one that will become your favourite memory. 🌍','Someone is about to enter your life who will make you laugh harder than you have in years. 🎭','The thing you have been quietly hoping for? It is already on its way to you. 💫','This birthday marks the beginning of your most legendary chapter yet. Write it boldly. 👑','A creative spark inside you is about to ignite something extraordinary. Trust the vision. ✨','The universe is conspiring to bring you exactly what your heart needs — not just what it wants. 🔮','This year, you will surprise yourself. The version of you at next birthday will be breathtaking. 🦋','Happiness is not just coming to you — it is already inside you, waiting to be released. 💖','Every single door that closes for you is hiding a galaxy behind it. Open the next one. 🚀'];
+let lastPred=-1;
+function getPrediction(){
+  const el=document.getElementById('predText');let p;
+  do{p=Math.floor(Math.random()*PREDS.length);}while(p===lastPred);
+  lastPred=p;el.style.opacity='0';
+  setTimeout(()=>{el.textContent='';let i=0;const txt=PREDS[p];function t(){if(i<txt.length){el.textContent+=txt[i];i++;setTimeout(t,22);}else el.style.opacity='1';}el.style.opacity='1';t();},300);
+}
+
+// ══════════════════════════════════════
+//  ADVENTURE
+// ══════════════════════════════════════
+const ADV={
+  start:{text:"You wake up on your birthday to find a mysterious glowing portal in your room. It pulses with cosmic energy, as if the universe itself is inviting you somewhere magical. What do you do?",choices:[{label:"✨ Step through the portal",next:'portal'},{label:"🔭 Observe it from a distance",next:'observe'},{label:"📸 Take a photo first",next:'photo'}]},
+  portal:{text:"You step through and land in a floating city made entirely of stardust and light. Music fills the air, and dozens of glowing beings cheer 'Happy Birthday!' A cosmic guide approaches you with a gift. What is it?",choices:[{label:"🌟 A map to your dreams",next:'map'},{label:"🔮 A crystal of self-knowledge",next:'crystal2'},{label:"💫 A key to infinite adventure",next:'key'}]},
+  observe:{text:"As you watch, the portal transforms into a mirror showing your best possible future self — confident, joyful, surrounded by love. The image whispers: 'This is already who you are becoming.' How do you feel?",choices:[{label:"💖 Overwhelmed with emotion",next:'emotion'},{label:"🚀 Excited and determined",next:'determined'},{label:"😌 Peaceful and grateful",next:'peaceful'}]},
+  photo:{text:"Your camera captures something impossible — the photo shows you one year from now, laughing in a place you've never been, surrounded by beautiful moments you haven't lived yet. What do you do?",choices:[{label:"🗺️ Find that place immediately",next:'map'},{label:"💌 Send it to someone you love",next:'emotion'},{label:"🌟 Trust the journey to get there",next:'peaceful'}]},
+  map:{text:"The map reveals that every dream you have ever held is marked with a star — and every single one has a path leading to it. The guide smiles: 'All roads on this map lead through you.' This birthday, you carry the map inside your heart. THE END ✨",choices:[{label:"🔄 Begin a new adventure",next:'start'}]},
+  crystal2:{text:"The crystal shows you every person whose life you have touched — a galaxy of souls who shine brighter because you exist. You are more loved than you know. Happy Birthday, Sarvika. THE END 💖",choices:[{label:"🔄 Begin a new adventure",next:'start'}]},
+  key:{text:"The key unlocks a door in the sky that leads to every adventure you have ever dreamed of. Mountains, oceans, cities, quiet beautiful mornings — they are all yours. The universe saved the best journey for you. THE END 🌍",choices:[{label:"🔄 Begin a new adventure",next:'start'}]},
+  emotion:{text:"Your tears carry the weight of gratitude and the lightness of hope. In this moment you understand — every hard day was preparing you for something magnificent. You are exactly where you need to be. THE END 🌸",choices:[{label:"🔄 Begin a new adventure",next:'start'}]},
+  determined:{text:"You wake up with a fire inside that the whole universe can feel. This birthday is not just a day — it is a declaration. From here, everything changes for the better. THE END 🔥",choices:[{label:"🔄 Begin a new adventure",next:'start'}]},
+  peaceful:{text:"Peace settles into your bones like sunlight. You realize you have always been enough — more than enough. The universe nods in agreement. Happy Birthday, cosmic soul. THE END 🌙",choices:[{label:"🔄 Begin a new adventure",next:'start'}]},
+};
+function advChoice(i){
+  const cur=document.getElementById('advScene').dataset.node||'start';
+  const next=ADV[cur].choices[i].next;
+  const scene=document.getElementById('advScene');
+  scene.style.opacity='0';scene.style.transform='translateY(10px)';
+  setTimeout(()=>{
+    const node=ADV[next];scene.dataset.node=next;
+    document.getElementById('advText').textContent=node.text;
+    const ch=document.getElementById('advChoices');ch.innerHTML='';
+    node.choices.forEach((c,j)=>{const b=document.createElement('button');b.className='adv-btn';b.textContent=c.label;b.onclick=()=>advChoice(j);ch.appendChild(b);});
+    scene.style.transition='all .5s ease';scene.style.opacity='1';scene.style.transform='translateY(0)';
+  },400);
+}
+document.getElementById('advScene').dataset.node='start';
+
+// ══════════════════════════════════════
+//  SPIN WHEEL
+// ══════════════════════════════════════
+const WHEEL_ITEMS=[
+  {label:'Compliment 💖',color:'#ff6b9d',msgs:['You light up every room you enter!','Your smile is absolutely contagious!','You are the most genuine person!','Your energy is pure magic!']},
+  {label:'Secret Wish 🌟',color:'#a855f7',msgs:['I wish you endless happiness!','May every dream come true!','Wishing you the whole universe!','May joy follow you everywhere!']},
+  {label:'Joke 😂',color:'#fbbf24',msgs:['Why was the birthday cake so good at math? Because it had so many layers! 🎂','What did the astronaut say on their birthday? Blast off to another year! 🚀','You\'re not getting older, you\'re becoming a classic! 👑','Age is just a number... a rather fabulous one! ✨']},
+  {label:'Bonus 🎁',color:'#3b82f6',msgs:['BONUS: You are officially 100x more awesome today!','BONUS: The universe is throwing confetti just for you!','BONUS: Extra sparkles added to your day!','BONUS: Your happiness level has been upgraded!']},
+  {label:'Prediction 🔮',color:'#06b6d4',msgs:['Something wonderful is coming in the next 30 days!','A beautiful surprise is waiting around the corner!','Your best adventure starts very soon!','The stars are aligning perfectly for you!']},
+  {label:'Achievement 🏆',color:'#f97316',msgs:['Achievement Unlocked: Birthday Legend!','Achievement Unlocked: Cosmic Queen!','Achievement Unlocked: Universe\'s Favourite!','Achievement Unlocked: Smile Generator!']},
+];
+const wCnv=document.getElementById('wheelCanvas');
+const wCtx=wCnv.getContext('2d');
+let wheelAngle=0,spinning=false,targetAngle=0,spinVel=0;
+function drawWheel(){
+  const cx=wCnv.width/2,cy=wCnv.height/2,r=cx-10;
+  wCtx.clearRect(0,0,wCnv.width,wCnv.height);
+  const sliceAngle=Math.PI*2/WHEEL_ITEMS.length;
+  WHEEL_ITEMS.forEach((item,i)=>{
+    const start=wheelAngle+i*sliceAngle,end=start+sliceAngle;
+    wCtx.beginPath();wCtx.moveTo(cx,cy);wCtx.arc(cx,cy,r,start,end);wCtx.closePath();
+    wCtx.fillStyle=item.color;wCtx.fill();
+    wCtx.strokeStyle='rgba(255,255,255,.15)';wCtx.lineWidth=2;wCtx.stroke();
+    wCtx.save();wCtx.translate(cx,cy);wCtx.rotate(start+sliceAngle/2);
+    wCtx.textAlign='right';wCtx.fillStyle='white';wCtx.font='bold 11px Nunito,sans-serif';wCtx.shadowColor='rgba(0,0,0,.5)';wCtx.shadowBlur=4;
+    wCtx.fillText(item.label,r-12,4);wCtx.restore();
+  });
+  // outer ring
+  wCtx.beginPath();wCtx.arc(cx,cy,r,0,Math.PI*2);wCtx.strokeStyle='rgba(255,255,255,.2)';wCtx.lineWidth=3;wCtx.stroke();
+  // glow
+  const g=wCtx.createRadialGradient(cx,cy,r-10,cx,cy,r+5);g.addColorStop(0,'transparent');g.addColorStop(1,'rgba(168,85,247,.3)');wCtx.beginPath();wCtx.arc(cx,cy,r+5,0,Math.PI*2);wCtx.fillStyle=g;wCtx.fill();
+}
+function animWheel(){
+  if(spinning){spinVel*=.98;wheelAngle+=spinVel;if(spinVel<.003){spinning=false;document.getElementById('spinBtn').disabled=false;getWheelResult();}}
+  drawWheel();requestAnimationFrame(animWheel);
+}
+animWheel();
+function spinWheel(){
+  if(spinning)return;spinning=true;document.getElementById('spinBtn').disabled=true;document.getElementById('spinResult').textContent='';
+  spinVel=.3+Math.random()*.25;
+}
+function getWheelResult(){
+  const sliceAngle=Math.PI*2/WHEEL_ITEMS.length;
+  const ptr=-Math.PI/2;
+  let a=((ptr-wheelAngle)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);
+  const idx=Math.floor(a/sliceAngle)%WHEEL_ITEMS.length;
+  const item=WHEEL_ITEMS[idx];
+  const msg=item.msgs[Math.floor(Math.random()*item.msgs.length)];
+  document.getElementById('spinResult').textContent=msg;
+  showToast(item.label+': '+msg.substring(0,50)+'...',3000);
+}
+
+// ══════════════════════════════════════
+//  CRYSTALS
+// ══════════════════════════════════════
+let crystalsFound=0;
+function buildCrystals(){
+  const field=document.getElementById('crystalField');
+  const cTypes=['💎','🔮','💠','🌀','🪩','⬟','🔹','🩵'];
+  cTypes.forEach((c,i)=>{
+    const el=document.createElement('div');el.className='crystal';
+    el.textContent=c;el.dataset.idx=i;
+    el.style.left=(5+Math.random()*88)+'%';el.style.top=(5+Math.random()*80)+'%';
+    el.style.animationDelay=Math.random()*3+'s';
+    el.style.animationDuration=(2+Math.random()*3)+'s';
+    el.onclick=()=>{
+      if(el.classList.contains('found'))return;
+      el.classList.add('found');crystalsFound++;
+      document.getElementById('cpTxt').textContent=crystalsFound+' / 8 crystals';
+      document.getElementById('cpFill').style.width=(crystalsFound/8*100)+'%';
+      showToast('💎 Crystal found! '+crystalsFound+'/8',1500);
+      launchConf(el.getBoundingClientRect().left+12,el.getBoundingClientRect().top+12,20);
+      if(crystalsFound===8){setTimeout(()=>{showToast('🔓 ALL CRYSTALS FOUND! Unlocking secret message...',2000);setTimeout(openLetter,2200);},500);}
+    };
+    field.appendChild(el);
+  });
+}
+
+// ══════════════════════════════════════
+//  FX CANVAS — CONFETTI + FIREWORKS
+// ══════════════════════════════════════
+const fxC=document.getElementById('fxCanvas');
+const fxCtx=fxC.getContext('2d');
+fxC.width=window.innerWidth;fxC.height=window.innerHeight;
+window.addEventListener('resize',()=>{fxC.width=window.innerWidth;fxC.height=window.innerHeight;});
+let fxParts=[],fwRockets=[];
+const FXCOLS=['#ff6b9d','#a855f7','#3b82f6','#06b6d4','#fbbf24','#f97316','#ec4899','#fff'];
+function launchConf(x,y,n=35){
+  for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,s=2+Math.random()*7;fxParts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-3,c:FXCOLS[Math.floor(Math.random()*FXCOLS.length)],sz:3+Math.random()*6,rot:Math.random()*360,rs:(Math.random()-.5)*15,life:1,sh:Math.random()>.4?'r':'c'});}
+}
+function launchFireworks(){
+  for(let i=0;i<12;i++){setTimeout(()=>{const x=100+Math.random()*(window.innerWidth-200),y=100+Math.random()*(window.innerHeight/2);fwRockets.push({x,y,r:Math.random()*50+30,c:FXCOLS[Math.floor(Math.random()*FXCOLS.length)],life:1,particles:[]});for(let j=0;j<60;j++){const a=Math.random()*Math.PI*2,s=1+Math.random()*4;fwRockets[fwRockets.length-1].particles.push({vx:Math.cos(a)*s,vy:Math.sin(a)*s,x:0,y:0,life:1});}launchConf(x,y,40);},i*300);}
+  showToast('🎆 Happy Birthday Sarvika! 🌸 The universe celebrates YOU! 🎉',4000);
+}
+function animFX(){
+  fxCtx.clearRect(0,0,fxC.width,fxC.height);
+  fxParts=fxParts.filter(p=>p.life>0);
+  fxParts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.25;p.rot+=p.rs;p.life-=.014;fxCtx.save();fxCtx.globalAlpha=Math.max(0,p.life);fxCtx.translate(p.x,p.y);fxCtx.rotate(p.rot*Math.PI/180);fxCtx.fillStyle=p.c;if(p.sh==='c'){fxCtx.beginPath();fxCtx.arc(0,0,p.sz/2,0,Math.PI*2);fxCtx.fill();}else fxCtx.fillRect(-p.sz/2,-p.sz/4,p.sz,p.sz/2);fxCtx.restore();});
+  fwRockets=fwRockets.filter(r=>r.life>0);
+  fwRockets.forEach(r=>{r.life-=.015;r.particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.05;p.life-=.018;fxCtx.beginPath();fxCtx.arc(r.x+p.x,r.y+p.y,2,0,Math.PI*2);fxCtx.fillStyle=r.c;fxCtx.globalAlpha=Math.max(0,p.life*r.life);fxCtx.fill();});fxCtx.globalAlpha=1;});
+  requestAnimationFrame(animFX);
+}
+animFX();
+
+// ══════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════
+let toastTimer;
+function showToast(msg,dur=2500){
+  const t=document.getElementById('toast');t.textContent=msg;t.style.transform='translateX(-50%) translateY(0)';
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.style.transform='translateX(-50%) translateY(120px)',dur);
+}
+
+// ══════════════════════════════════════
+//  SECRET LETTER
+// ══════════════════════════════════════
+let letterTyped=false;
+function openLetter(){
+  document.getElementById('letterModal').classList.add('on');
+  if(letterTyped)return;letterTyped=true;
+  const txt="Dear Sarvika,\n\nOn this birthday, I want you to know something the stars have always known:\n\nYou are the kind of person the universe spends centuries designing. The way you carry yourself quietly, the way your eyes hold entire worlds — it is rare. It is extraordinary.\n\nYou may not always see it. But someone out there notices every single thing about you. The way you think, the way you feel, the way you exist in a room.\n\nThis year, I hope every good thing finds its way to you. Not because you chased it, but because you deserve it simply for being you.\n\nHappy Birthday. The universe is lucky to have you in it. 🌸";
+  const el=document.getElementById('ltBody');let i=0;el.innerHTML='';
+  function t(){if(i<txt.length){el.innerHTML=txt.substring(0,i+1).replace(/\n/g,'<br>')+'<span style="display:inline-block;width:2px;height:1em;background:var(--pk);animation:blink .7s steps(1) infinite;vertical-align:middle"></span>';i++;setTimeout(t,i<5?80:txt[i-1]==='\n'?300:18);}else{el.innerHTML=txt.replace(/\n/g,'<br>');document.getElementById('ltSign').style.opacity='1';}}
+  setTimeout(t,400);
+  for(let i=0;i<6;i++)setTimeout(()=>launchConf(Math.random()*window.innerWidth,Math.random()*window.innerHeight*.5,30),i*300);
+}
+function closeLetter(){document.getElementById('letterModal').classList.remove('on');}
+
+// ══════════════════════════════════════
+//  CLICK ANYWHERE EFFECTS
+// ══════════════════════════════════════
+document.addEventListener('click',e=>{launchConf(e.clientX,e.clientY,12);});
+document.addEventListener('touchstart',e=>{launchConf(e.touches[0].clientX,e.touches[0].clientY,8);},{passive:true});
+
+// ── LETTER BTN IN HERO (bottom secret) ──
+const ltBtn=document.createElement('button');
+ltBtn.style.cssText='position:fixed;bottom:20px;right:20px;background:linear-gradient(135deg,rgba(168,85,247,.2),rgba(255,107,157,.2));border:1px solid rgba(168,85,247,.3);border-radius:50px;padding:10px 20px;font-family:Orbitron,sans-serif;font-size:11px;letter-spacing:2px;color:rgba(255,255,255,.6);cursor:pointer;z-index:500;backdrop-filter:blur(10px);transition:all .3s';
+ltBtn.textContent='💌 SECRET LETTER';ltBtn.onclick=openLetter;
+ltBtn.onmouseenter=()=>ltBtn.style.background='linear-gradient(135deg,rgba(168,85,247,.4),rgba(255,107,157,.4))';
+ltBtn.onmouseleave=()=>ltBtn.style.background='linear-gradient(135deg,rgba(168,85,247,.2),rgba(255,107,157,.2))';
+document.body.appendChild(ltBtn);
+</script>
+</body>
+</html>"""
