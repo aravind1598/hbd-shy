@@ -429,6 +429,45 @@ body.light .bnav{background:rgba(248,242,228,.95);}
     
 </style>
 <style>
+/* ==================== BIRTHDAY LOCK SYSTEM (styles) ==================== */
+html.bl-locked, html.bl-locked body{overflow:hidden!important;height:100%;}
+
+#birthdayLock{
+  position:fixed;inset:0;z-index:10000;background:var(--d1);
+  background-image:radial-gradient(ellipse 70% 50% at 15% 8%,rgba(147,51,234,.16) 0%,transparent 55%),radial-gradient(ellipse 55% 55% at 88% 90%,rgba(245,158,11,.12) 0%,transparent 55%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:32px;transition:opacity .65s ease,transform .65s ease;
+}
+#birthdayLock.bl-out{opacity:0;transform:scale(.97);pointer-events:none;}
+.bl-icon{font-size:64px;margin-bottom:14px;animation:cakeRock 2.4s ease infinite;filter:drop-shadow(0 0 22px rgba(212,168,83,.45));}
+.bl-title{font-family:var(--ff);font-style:italic;font-size:clamp(24px,6vw,40px);font-weight:700;
+  background:linear-gradient(135deg,var(--g1),var(--r1),var(--g2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px;line-height:1.2;}
+.bl-sub{font-size:13px;color:var(--t3);letter-spacing:.4px;margin-bottom:30px;max-width:320px;}
+.bl-label{font-size:10px;text-transform:uppercase;letter-spacing:3px;color:var(--g2);font-weight:700;margin-bottom:14px;}
+.bl-cd{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:6px;}
+.bl-box{background:var(--s1);border:1px solid var(--b2);border-radius:16px;padding:16px 14px;min-width:70px;backdrop-filter:blur(12px);}
+.bl-n{font-family:var(--ff);font-size:32px;font-weight:700;color:var(--g1);line-height:1;}
+.bl-l{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--t3);margin-top:5px;}
+.bl-unlocked-note{font-size:11px;color:var(--grn);margin-top:18px;display:none;}
+
+/* HIDDEN EARLY ACCESS dot — nearly invisible, bottom-right corner */
+.bl-dot{position:fixed;bottom:6px;right:6px;width:16px;height:16px;z-index:10001;cursor:default;
+  background:transparent;border:none;padding:0;opacity:.04;transition:opacity .3s;}
+.bl-dot:hover,.bl-dot:focus{opacity:.22;cursor:pointer;}
+.bl-dot::after{content:'';display:block;width:6px;height:6px;margin:5px auto;border-radius:50%;background:var(--t3);}
+
+#blPinModal{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:10002;display:flex;align-items:center;justify-content:center;
+  padding:18px;opacity:0;pointer-events:none;transition:opacity .3s;backdrop-filter:blur(10px);}
+#blPinModal.on{opacity:1;pointer-events:all;}
+.bl-modal-in{background:linear-gradient(135deg,var(--d2),var(--d3));border:1px solid var(--b2);border-radius:24px;
+  padding:28px 24px;max-width:320px;width:100%;text-align:center;transform:scale(.85);transition:transform .35s cubic-bezier(.34,1.56,.64,1);}
+#blPinModal.on .bl-modal-in{transform:scale(1);}
+@keyframes blShake{0%,100%{transform:translateX(0) scale(1);}25%{transform:translateX(-6px) scale(1);}75%{transform:translateX(6px) scale(1);}}
+.bl-modal-in input{text-align:center;letter-spacing:6px;font-size:18px;margin:14px 0 6px;}
+.bl-err{font-size:11px;color:#ff8080;min-height:15px;margin-bottom:8px;}
+</style>
+
+<style>
 /* ---- Intro film Act 0b (bow & arrow -> tree bloom) ---- */
 
 /* ============================================================
@@ -1150,6 +1189,36 @@ html.no-gate .gate{ display:none !important; }
 </style>
 </head>
 <body>
+<!-- BIRTHDAY LOCK SYSTEM -->
+<div id="birthdayLock">
+  <div class="bl-icon">🔒</div>
+  <div class="bl-title">Something Special<br>Is Waiting For You…</div>
+  <div class="bl-sub">Sarvika's celebration is under wraps just a little longer ✨</div>
+  <div class="bl-label">Unlocking In</div>
+  <div class="bl-cd">
+    <div class="bl-box"><div class="bl-n" id="blDays">00</div><div class="bl-l">Days</div></div>
+    <div class="bl-box"><div class="bl-n" id="blHours">00</div><div class="bl-l">Hours</div></div>
+    <div class="bl-box"><div class="bl-n" id="blMins">00</div><div class="bl-l">Mins</div></div>
+    <div class="bl-box"><div class="bl-n" id="blSecs">00</div><div class="bl-l">Secs</div></div>
+  </div>
+  <div class="bl-unlocked-note" id="blUnlockedNote">🎉 Unlocking now…</div>
+</div>
+
+<!-- HIDDEN EARLY ACCESS -->
+<button class="bl-dot" id="blHiddenDot" aria-label="" tabindex="-1"></button>
+<div id="blPinModal">
+  <div class="bl-modal-in">
+    <div style="font-size:32px;margin-bottom:6px;">🔑</div>
+    <div style="font-family:var(--ff);font-size:18px;color:var(--g1);font-weight:700;margin-bottom:4px;">Early Access</div>
+    <div style="font-size:11px;color:var(--t3);margin-bottom:6px;">Enter the PIN to preview</div>
+    <input id="blPinInput" type="password" inputmode="numeric" autocomplete="off" placeholder="••••" maxlength="12">
+    <div class="bl-err" id="blPinErr"></div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:6px;">
+      <button class="btn btn-ghost btn-sm" id="blPinCancel" type="button">Cancel</button>
+      <button class="btn btn-gold btn-sm" id="blPinSubmit" type="button">Unlock</button>
+    </div>
+  </div>
+</div>
 
 <canvas id="cfc" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;"></canvas>
 
@@ -4135,273 +4204,92 @@ window.addEventListener('DOMContentLoaded',()=>{
   refreshAff();
   updBdCd();
 });
-</script><script type="module">
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+</script>
+  <script>
+/* ==================== BIRTHDAY LOCK SYSTEM ==================== */
+(function(){
+  // ---- CONFIG ----
+  // Unlock instant, pinned to Asia/Kolkata (+05:30, no DST) so it's correct
+  // no matter the visitor's own device timezone.
+  var BIRTHDAY_UNLOCK_ISO = '2026-11-20T00:00:00+05:30'; // <-- change the date here if needed
+  var UNLOCK_TIME = new Date(BIRTHDAY_UNLOCK_ISO).getTime();
 
-/* ============================================================
-   PART 1 — SITE-WIDE 3D TILT CARDS
-   Works on every card already in your page. No HTML edits.
-   ============================================================ */
-(function initTiltCards(){
-  const SELECTORS = '.card, .bd-c, .q-card, .mem-card, .dream-c, .note-c, .achieve, .track, .match-card, .exam-cd, .aff-card, .cert';
-  const MAX_TILT = 10;      // degrees
-  const MAX_LIFT = 10;      // px pop-out
-  const PERSPECTIVE = 900;  // px
+  // Early-access PIN — client-side only. See note below: this is NOT truly
+  // secure since anyone can view the page source. It's a light gate, not a lock.
+  var _pin = ['2','7','1','1'].join('');
+  function correctPin(v){ return v === _pin; }
 
-  function attach(el){
-    if (el.dataset.tiltReady) return;
-    el.dataset.tiltReady = '1';
-    el.style.transformStyle = 'preserve-3d';
-    el.style.willChange = 'transform';
-    el.style.transition = 'transform .15s ease-out, box-shadow .25s ease';
+  var LS_KEY = 'bday_early_access_v1';
+  function hasEarlyAccess(){ try{ return localStorage.getItem(LS_KEY)==='1'; }catch(e){ return false; } }
+  function grantEarlyAccess(){ try{ localStorage.setItem(LS_KEY,'1'); }catch(e){} }
+  function isUnlocked(){ return Date.now() >= UNLOCK_TIME || hasEarlyAccess(); }
 
-    let raf = null;
-    function apply(px, py, rect){
-      const cx = px - rect.left, cy = py - rect.top;
-      const rx = ((cy / rect.height) - 0.5) * -2 * MAX_TILT;
-      const ry = ((cx / rect.width) - 0.5) *  2 * MAX_TILT;
-      el.style.transform =
-        `perspective(${PERSPECTIVE}px) rotateX(${rx}deg) rotateY(${ry}deg) translateZ(${MAX_LIFT}px)`;
-      el.style.boxShadow = `0 ${18 + Math.abs(rx)}px ${36 + Math.abs(ry)}px -14px rgba(212,168,83,.45)`;
-    }
-    function reset(){
-      el.style.transform = 'perspective(900px) rotateX(0) rotateY(0) translateZ(0)';
-      el.style.boxShadow = '';
-    }
-    el.addEventListener('mousemove', (e) => {
-      if (raf) cancelAnimationFrame(raf);
-      const rect = el.getBoundingClientRect();
-      raf = requestAnimationFrame(() => apply(e.clientX, e.clientY, rect));
-    });
-    el.addEventListener('mouseleave', reset);
-    el.addEventListener('touchmove', (e) => {
-      if (!e.touches[0]) return;
-      const rect = el.getBoundingClientRect();
-      if (raf) cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => apply(e.touches[0].clientX, e.touches[0].clientY, rect));
-    }, { passive: true });
-    el.addEventListener('touchend', reset);
+  var lockEl,cdDays,cdHours,cdMins,cdSecs,note,dot,modal,pinInput,pinErr,pinSubmit,pinCancel;
+  var tickTimer=null;
+  function $(id){ return document.getElementById(id); }
+  function pad(n){ return String(n).padStart(2,'0'); }
+
+  // ---- COUNTDOWN TIMER ----
+  function renderCountdown(){
+    var diff = UNLOCK_TIME - Date.now();
+    if (diff <= 0){ unlockSite(); return; }
+    var d=Math.floor(diff/86400000), h=Math.floor((diff%86400000)/3600000),
+        m=Math.floor((diff%3600000)/60000), s=Math.floor((diff%60000)/1000);
+    if(cdDays) cdDays.textContent=pad(d);
+    if(cdHours) cdHours.textContent=pad(h);
+    if(cdMins) cdMins.textContent=pad(m);
+    if(cdSecs) cdSecs.textContent=pad(s);
   }
 
-  function scan(){ document.querySelectorAll(SELECTORS).forEach(attach); }
-  scan();
-  // re-scan whenever the app swaps pages / re-renders lists (SPA nav)
-  const mo = new MutationObserver(() => scan());
-  mo.observe(document.body, { childList: true, subtree: true });
-})();
-
-/* ============================================================
-   PART 2 — 3D GIFT BOX (Three.js)
-   Replaces the emoji #giftBox with a real spinning gift box.
-   Tap it: lid pops open + confetti burst (falls back to your
-   existing openGift() so the reveal text still shows).
-   ============================================================ */
-(function initGiftBox3D(){
-  const host = document.getElementById('giftBox');
-  if (!host) return;
-
-  const size = 132;
-  host.textContent = '';
-  host.style.background = 'transparent';
-  host.style.boxShadow = 'none';
-  host.style.width = size + 'px';
-  host.style.height = size + 'px';
-
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  renderer.setSize(size, size);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  host.appendChild(renderer.domElement);
-
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 50);
-  camera.position.set(2.4, 2.0, 3.2);
-  camera.lookAt(0, 0.2, 0);
-
-  scene.add(new THREE.AmbientLight(0xffffff, 0.65));
-  const key = new THREE.DirectionalLight(0xffe4b0, 1.1);
-  key.position.set(3, 5, 2);
-  scene.add(key);
-  const rim = new THREE.PointLight(0xc084fc, 1.2, 12);
-  rim.position.set(-3, 2, -2);
-  scene.add(rim);
-
-  const boxGroup = new THREE.Group();
-  scene.add(boxGroup);
-
-  const boxMat = new THREE.MeshStandardMaterial({ color: 0xc084fc, metalness: 0.25, roughness: 0.35 });
-  const bodyGeo = new THREE.BoxGeometry(1.6, 1.1, 1.6);
-  const body = new THREE.Mesh(bodyGeo, boxMat);
-  body.position.y = -0.15;
-  boxGroup.add(body);
-
-  const lidGroup = new THREE.Group();
-  lidGroup.position.set(0, 0.42, 0.8);   // pivot at back edge of lid
-  const lidMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.3, roughness: 0.3 });
-  const lid = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.28, 1.7), lidMat);
-  lid.position.set(0, 0, -0.8);
-  lidGroup.add(lid);
-  boxGroup.add(lidGroup);
-
-  const ribbonMat = new THREE.MeshStandardMaterial({ color: 0xffe4b0, metalness: 0.1, roughness: 0.5 });
-  const ribbonV = new THREE.Mesh(new THREE.BoxGeometry(0.22, 1.14, 1.66), ribbonMat);
-  ribbonV.position.y = -0.14;
-  boxGroup.add(ribbonV);
-  const ribbonH = new THREE.Mesh(new THREE.BoxGeometry(1.66, 1.14, 0.22), ribbonMat);
-  ribbonH.position.y = -0.14;
-  boxGroup.add(ribbonH);
-
-  const bowGeo = new THREE.TorusKnotGeometry(0.16, 0.06, 64, 8, 2, 3);
-  const bow = new THREE.Mesh(bowGeo, ribbonMat);
-  bow.position.set(0, 0.58, 0.8);
-  bow.scale.set(0.9, 0.9, 0.9);
-  boxGroup.add(bow);
-
-  let opened = false, autoRotate = true, t = 0;
-  function tick(){
-    t += 0.016;
-    if (autoRotate) boxGroup.rotation.y += 0.012;
-    body.position.y = -0.15 + Math.sin(t * 1.4) * 0.03;
-    bow.rotation.y += 0.01;
-    renderer.render(scene, camera);
-    requestAnimationFrame(tick);
+  // ---- AUTOMATIC MIDNIGHT UNLOCK ----
+  function unlockSite(){
+    if(tickTimer){ clearInterval(tickTimer); tickTimer=null; }
+    document.documentElement.classList.remove('bl-locked');
+    if(lockEl){
+      if(note) note.style.display='block';
+      lockEl.classList.add('bl-out');
+      setTimeout(function(){ lockEl.style.display='none'; }, 700);
+    }
   }
-  tick();
-
-  function openLid(){
-    if (opened) return;
-    opened = true;
-    autoRotate = false;
-    const start = performance.now();
-    const dur = 650;
-    function anim(now){
-      const p = Math.min(1, (now - start) / dur);
-      const ease = 1 - Math.pow(1 - p, 3);
-      lidGroup.rotation.x = -ease * (Math.PI * 0.62);
-      lidGroup.position.y = 0.42 + ease * 0.5;
-      if (p < 1) requestAnimationFrame(anim);
-    }
-    requestAnimationFrame(anim);
-
-    // little particle pop
-    const pGeo = new THREE.BufferGeometry();
-    const N = 40, pos = new Float32Array(N * 3);
-    for (let i = 0; i < N; i++){
-      pos[i*3]   = (Math.random() - 0.5) * 0.3;
-      pos[i*3+1] = 0.3 + Math.random() * 0.2;
-      pos[i*3+2] = (Math.random() - 0.5) * 0.3;
-    }
-    pGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    const pMat = new THREE.PointsMaterial({ color: 0xffe38c, size: 0.09, transparent: true });
-    const pts = new THREE.Points(pGeo, pMat);
-    scene.add(pts);
-    const velY = new Float32Array(N).map(() => 0.02 + Math.random() * 0.03);
-    const velXZ = new Float32Array(N * 2).map(() => (Math.random() - 0.5) * 0.03);
-    let life = 0;
-    (function fall(){
-      life += 1;
-      const arr = pGeo.attributes.position.array;
-      for (let i = 0; i < N; i++){
-        arr[i*3]   += velXZ[i*2];
-        arr[i*3+1] += velY[i] - life * 0.0015;
-        arr[i*3+2] += velXZ[i*2+1];
-      }
-      pGeo.attributes.position.needsUpdate = true;
-      pMat.opacity = Math.max(0, 1 - life / 60);
-      if (life < 60) requestAnimationFrame(fall);
-      else scene.remove(pts);
-    })();
+  function showLocked(){
+    document.documentElement.classList.add('bl-locked');
+    if(lockEl){ lockEl.style.display='flex'; lockEl.classList.remove('bl-out'); }
+    renderCountdown();
+    tickTimer=setInterval(renderCountdown,1000);
   }
 
-  host.style.cursor = 'pointer';
-  host.addEventListener('click', () => {
-    openLid();
-    if (typeof window.openGift === 'function') window.openGift();
-  });
-})();
-
-/* ============================================================
-   PART 3 — 3D CONFETTI BURST (Three.js overlay)
-   Hooks into your existing "Celebrate!" / "Fireworks" buttons —
-   adds a real 3D particle burst on top of your 2D confetti.
-   ============================================================ */
-(function init3DBurst(){
-  let renderer, scene, camera, group;
-  let active = false;
-
-  function ensureScene(){
-    if (renderer) return;
-    const canvas = document.createElement('canvas');
-    canvas.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:9997;';
-    document.body.appendChild(canvas);
-    renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.z = 8;
-    scene.add(new THREE.AmbientLight(0xffffff, 1));
-    window.addEventListener('resize', () => {
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-    });
+  // ---- HIDDEN EARLY ACCESS ----
+  function openModal(){ if(!modal)return; modal.classList.add('on'); pinErr.textContent=''; pinInput.value=''; setTimeout(function(){pinInput.focus();},50); }
+  function closeModal(){ if(!modal)return; modal.classList.remove('on'); }
+  function tryPin(){
+    var v=(pinInput.value||'').trim();
+    if(correctPin(v)){ grantEarlyAccess(); closeModal(); unlockSite(); }
+    else{
+      pinErr.textContent='Incorrect PIN. Try again.';
+      pinInput.value=''; pinInput.focus();
+      var box=modal.querySelector('.bl-modal-in');
+      box.style.animation='none'; void box.offsetWidth; box.style.animation='blShake .4s ease';
+    }
   }
 
-  function burst3D(){
-    ensureScene();
-    if (group) scene.remove(group);
-    group = new THREE.Group();
-    scene.add(group);
+  function init(){
+    lockEl=$('birthdayLock'); cdDays=$('blDays'); cdHours=$('blHours'); cdMins=$('blMins'); cdSecs=$('blSecs');
+    note=$('blUnlockedNote'); dot=$('blHiddenDot'); modal=$('blPinModal');
+    pinInput=$('blPinInput'); pinErr=$('blPinErr'); pinSubmit=$('blPinSubmit'); pinCancel=$('blPinCancel');
 
-    const cols = [0xc084fc, 0xf2b8ff, 0xf59e0b, 0xfde68a, 0x9333ea, 0x34ffc4];
-    const N = 90;
-    const meshes = [];
-    for (let i = 0; i < N; i++){
-      const geo = Math.random() < 0.5
-        ? new THREE.BoxGeometry(0.12, 0.12, 0.03)
-        : new THREE.PlaneGeometry(0.14, 0.14);
-      const mat = new THREE.MeshBasicMaterial({
-        color: cols[(Math.random() * cols.length) | 0], side: THREE.DoubleSide,
-      });
-      const m = new THREE.Mesh(geo, mat);
-      m.position.set((Math.random() - 0.5) * 0.6, (Math.random() - 0.5) * 0.6, 0);
-      const ang = Math.random() * Math.PI * 2;
-      const speed = 2 + Math.random() * 4;
-      m.userData.vel = new THREE.Vector3(Math.cos(ang) * speed, Math.sin(ang) * speed + 2, (Math.random() - 0.5) * 3);
-      m.userData.rot = new THREE.Vector3(Math.random() * 6, Math.random() * 6, Math.random() * 6);
-      group.add(m);
-      meshes.push(m);
-    }
+    if(dot) dot.addEventListener('click', openModal);
+    if(pinSubmit) pinSubmit.addEventListener('click', tryPin);
+    if(pinCancel) pinCancel.addEventListener('click', closeModal);
+    if(pinInput) pinInput.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); tryPin(); } });
+    if(modal) modal.addEventListener('click', function(e){ if(e.target===modal) closeModal(); });
+    document.addEventListener('keydown', function(e){ if(e.key==='Escape' && modal && modal.classList.contains('on')) closeModal(); });
 
-    active = true;
-    let life = 0;
-    const g = -6.5;
-    (function step(){
-      life += 1 / 60;
-      meshes.forEach((m) => {
-        m.userData.vel.y += g / 60;
-        m.position.addScaledVector(m.userData.vel, 1 / 60);
-        m.rotation.x += m.userData.rot.x / 60;
-        m.rotation.y += m.userData.rot.y / 60;
-        m.material.opacity = Math.max(0, 1 - life / 2.2);
-        m.material.transparent = true;
-      });
-      renderer.render(scene, camera);
-      if (life < 2.2) requestAnimationFrame(step);
-      else { scene.remove(group); active = false; }
-    })();
+    if(isUnlocked()){ if(lockEl) lockEl.style.display='none'; }
+    else{ showLocked(); }
   }
 
-  // hook into your existing global functions without touching your file
-  ['launchFW', 'spawnHearts', 'showCeleb'].forEach((name) => {
-    const orig = window[name];
-    if (typeof orig === 'function'){
-      window[name] = function(...args){
-        burst3D();
-        return orig.apply(this, args);
-      };
-    }
-  });
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
 })();
 </script>
 </body>
